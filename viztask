@@ -1,0 +1,46 @@
+#!/usr/bin/python3
+import re
+import sys
+
+def parse_tree(lines):
+    """
+    Parse an indented outline into (level, name, parent) tuples.  Each level
+    of indentation is 4 spaces.
+    """
+    regex = re.compile(r'^(?P<indent>(?: {4})*)(?P<name>\S.*)')
+    stack = []
+    for line in lines:
+        match = regex.match(line)
+        if not match:
+            raise ValueError(
+                'Indentation not a multiple of 4 spaces: "{0}"'.format(line)
+            )
+        level = len(match.group('indent')) // 4
+        if level > len(stack):
+            raise ValueError('Indentation too deep: "{0}"'.format(line))
+        stack[level:] = [match.group('name')]
+        yield level, match.group('name'), (stack[level - 1] if level else None)
+
+
+def strike(text):
+    parts = text.split(":")
+    if len(parts)==2 and parts[1]=="false":
+        return ''.join([u'\u0336{}'.format(c) for c in text])
+    else:
+        return text
+
+if sys.argv[1]!=None:
+    fi = sys.argv[1]
+    try:
+        with open(fi) as f:
+            raw = f.read()
+        for level, name, parent in parse_tree(raw.split('\n')):
+            print('├{0} {1}'.format('─' * (4 * level), strike(name)))
+    except FileNotFoundError:
+        print("file doesnt exist")
+    except:
+        print("please make sure indent in indentation file: ", fi)
+else:
+    print("required indent file name as argument")
+
+
